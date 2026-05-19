@@ -1,21 +1,23 @@
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
+// 1. All plugins are declared and managed at the root level
 plugins {
     java
     application
-    id("com.github.johnrengelman.shadow") version "8.1.1" apply false
+    id("com.gradleup.shadow") version "8.3.5" apply false
 }
 
 group = "com.oi"
 version = "1.0.0"
 
 subprojects {
+    // 2. Modern way to apply core plugins to subprojects without 'apply(plugin = ...)'
+    plugins.apply("java")
+    plugins.apply("application")
 
-    apply(plugin = "java")
-    apply(plugin = "application")
-
-    if (project.name != "sdk") {    //plugin is applied only if the subproject produces executable
-        apply(plugin = "com.github.johnrengelman.shadow")
+    // Modern conditional plugin application
+    if (name != "sdk") {
+        plugins.apply("com.gradleup.shadow")
     }
 
     repositories {
@@ -27,7 +29,8 @@ subprojects {
             implementation(project(":sdk"))
         }
 
-        implementation(platform("io.vertx:vertx-stack-depchain:4.5.7"))
+        // Vert.x 5.x LTS stack
+        implementation(platform("io.vertx:vertx-stack-depchain:5.0.12"))
         implementation("io.vertx:vertx-web-client")
         implementation("io.vertx:vertx-auth-jwt")
         implementation("io.vertx:vertx-web")
@@ -42,42 +45,33 @@ subprojects {
         implementation("io.vertx:vertx-circuit-breaker")
         implementation("io.vertx:vertx-mail-client")
         implementation("io.vertx:vertx-dropwizard-metrics")
-        implementation("io.vertx:vertx-circuit-breaker")
-        implementation("io.vertx:vertx-mail-client")
 
         implementation("com.fasterxml.jackson.core:jackson-databind:2.17.1")
 
-        // utility functions
-        implementation("com.google.guava:guava:33.0.0-jre")
-        implementation("commons-io:commons-io:2.15.1")
-        implementation("org.apache.commons:commons-text:1.11.0")
+        // Utilities
+        implementation("com.google.guava:guava:33.1.0-jre")
+        implementation("commons-io:commons-io:2.16.1")
+        implementation("org.apache.commons:commons-text:1.12.0")
         implementation("org.apache.httpcomponents.client5:httpclient5:5.3.1")
-
-        implementation("org.quartz-scheduler:quartz:2.3.2")
-
+        implementation("org.quartz-scheduler:quartz:2.4.0-rc2")
         implementation("com.opencsv:opencsv:5.9")
+        implementation("org.bouncycastle:bcprov-jdk18on:1.78.1")
 
-        implementation("org.bouncycastle:bcprov-jdk18on:1.77")
-
-        // Vert.x JUnit5 for testing
         testImplementation("io.vertx:vertx-junit5")
-
-        // JUnit Jupiter for testing
-        testImplementation("org.junit.jupiter:junit-jupiter:5.9.1")
+        testImplementation("org.junit.jupiter:junit-jupiter:5.11.0")
     }
 
     java {
-        sourceCompatibility = JavaVersion.VERSION_21
-        targetCompatibility = JavaVersion.VERSION_21
+        sourceCompatibility = JavaVersion.VERSION_25
+        targetCompatibility = JavaVersion.VERSION_25
     }
 
     afterEvaluate {
-        if (project.name != "sdk") { //task is configured only if the subproject produces executables.
-
+        if (project.name != "sdk") {
             tasks.withType(ShadowJar::class.java) {
                 archiveClassifier.set("fat")
                 manifest {
-                    attributes(Pair("Main-Class", project.findProperty("mainClassName")))
+                    attributes(mapOf("Main-Class" to project.findProperty("mainClassName")))
                 }
                 mergeServiceFiles()
             }
@@ -86,5 +80,4 @@ subprojects {
             mainClass.set(project.findProperty("mainClassName") as? String)
         }
     }
-
 }

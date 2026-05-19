@@ -39,7 +39,7 @@ public final class LoadBalancer extends AbstractVerticle implements Deployable {
     }
 
     public String id() {
-        return "loadbalancer:" + this.address;
+        return "load_balancer:" + this.address;
     }
 
     @Override
